@@ -1,0 +1,11 @@
+node_modules/
+shots/
+backup/
+server/
+tools/cloudflared.exe
+tools/_news_sample.html
+data/*.db
+data/*.db-wal
+data/*.db-shm
+*.log
+.env

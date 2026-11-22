@@ -1,441 +1,447 @@
-<!doctype html>
-<html lang="zh-CN" data-theme="dark">
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="color-scheme" content="dark light" />
-  <meta name="theme-color" id="metaTheme" content="#1c1917" />
-  <link rel="icon" type="image/svg+xml" href="./favicon.svg?v=20261122" />
-  <title>校园生活小站 · 课表 / DDL / 记账</title>
-  <meta name="description" content="一个纯本地的校园工作台：课表、DDL、记账、取件码、值日、便利贴与心情打卡。" />
-
-  <!-- 防闪烁：必须早于样式表执行 -->
-  <script>
-  (function () {
-    var root = document.documentElement;
-    var KEY = 'campus.theme';
-    var saved = null;
-    try {
-      var raw = localStorage.getItem(KEY);
-      if (raw) {
-        try {
-          var parsed = JSON.parse(raw);
-          saved = (parsed === 'dark' || parsed === 'light') ? parsed : null;
-        } catch (e) {
-          saved = (raw === 'dark' || raw === 'light') ? raw : null;
-        }
-      }
-    } catch (e) { /* 隐私模式：落到系统偏好 */ }
-    if (saved !== 'dark' && saved !== 'light') {
-      saved = (window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-    }
-    root.setAttribute('data-theme', saved);
-    root.style.colorScheme = saved;
-    document.addEventListener('DOMContentLoaded', function () {
-      var meta = document.getElementById('metaTheme');
-      if (meta) meta.setAttribute('content', saved === 'dark' ? '#1c1917' : '#f6f5f4');
-    });
-  })();
-  </script>
-
-  <link rel="stylesheet" href="./css/tokens.css?v=20261122" />
-  <link rel="stylesheet" href="./css/base.css?v=20261122" />
-  <link rel="stylesheet" href="./css/components.css?v=20261122" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c2b27">
+<title>校园生活小站 · 潍坊理工学院</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f7d6e'/%3E%3Ctext x='32' y='43' font-size='32' text-anchor='middle' fill='%23fff' font-family='sans-serif'%3E校%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./styles.css?v=20261122">
 </head>
 <body>
-  <a class="skip-link" href="#main">跳到主要内容</a>
 
-  <!-- ---------- 顶栏 ---------- -->
-  <header class="topbar">
+<header class="topbar">
+  <div class="topbar-inner">
     <div class="brand">
-      <span class="brand-mark" aria-hidden="true">校</span>
-      <div class="brand-text">
-        <strong>校园生活小站</strong>
-        <small id="todayLabel">—</small>
-      </div>
+      <span class="logo">校</span>
+      <span>校园生活小站<span class="brand-sub" style="font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:.06em;margin-left:8px">课表 · DDL · 记账 · 专注</span></span>
     </div>
-    <div class="topbar-actions">
-      <span class="chip" id="storageChip" title="数据只存在这台设备">本地存储</span>
-      <button class="icon-btn" id="themeBtn" type="button"
-              aria-label="切换深色 / 浅色主题" aria-pressed="true">
-        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"
-                fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-        </svg>
-        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
-          <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"
-                stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-  </header>
-
-  <main id="main" class="app-main">
-
-    <!-- ========== 概览 ========== -->
-    <section class="view is-active" id="view-home" data-view="home">
-      <header class="view-head">
-        <p class="eyebrow" id="homeWeek">第 13 周 · 周日</p>
-        <h1 id="homeGreeting">晚上好</h1>
-        <p class="muted" id="homeSub">今天 0 节课，0 个 DDL 在 7 天内到期。</p>
-      </header>
-
-      <div class="stat-grid">
-        <article class="card stat"><span>今日课程</span><strong class="num" id="statToday">0</strong><small>节</small></article>
-        <article class="card stat"><span>待办 DDL</span><strong class="num" id="statTasks">0</strong><small>条</small></article>
-        <article class="card stat"><span>本月支出</span><strong class="num" id="statSpent">¥0</strong></article>
-        <article class="card stat"><span>待取快递</span><strong class="num" id="statParcels">0</strong><small>件</small></article>
-      </div>
-
-      <section class="card">
-        <div class="card-head">
-          <h2>今天要上的课</h2>
-          <a class="link" href="#/schedule">本周课表</a>
-        </div>
-        <ul class="list" id="homeToday"><li class="empty">今天没有课</li></ul>
-      </section>
-
-      <section class="quick-grid" aria-label="快捷入口">
-        <a class="quick" href="#/parcel"><b>取件码</b><small id="quickParcel">0 件待取</small></a>
-        <a class="quick" href="#/food"><b>今天吃什么</b><small>随机转盘</small></a>
-        <a class="quick" href="#/dorm"><b>宿舍小助手</b><small id="quickDuty">今日值日 —</small></a>
-        <a class="quick" href="#/notes"><b>便利贴</b><small id="quickNotes">0 张</small></a>
-        <a class="quick" href="#/mood"><b>心情打卡</b><small>记录今天</small></a>
-        <a class="quick" href="#/study"><b>学习资源</b><small>免费站 + 离线书</small></a>
-      </section>
-    </section>
-
-    <!-- ========== 课表 ========== -->
-    <section class="view" id="view-schedule" data-view="schedule" hidden>
-      <header class="view-head"><p class="eyebrow">Schedule</p><h1>课表</h1></header>
-      <div class="card">
-        <div class="card-head"><h2 id="weekTitle">第 13 周</h2><span class="muted" id="weekRange">—</span></div>
-        <div class="week-switch">
-          <button class="btn btn-ghost" type="button" id="weekPrev">上周</button>
-          <button class="btn btn-ghost" type="button" id="weekToday">本周</button>
-          <button class="btn btn-ghost" type="button" id="weekNext">下周</button>
-        </div>
-        <p class="hint table-tip">左右滑动表格查看全周 →</p>
-        <div class="table-scroll"><div class="schedule-grid" id="scheduleGrid"></div></div>
-        <p class="hint" id="weekHint"></p>
-      </div>
-
-      <section class="card">
-        <div class="card-head">
-          <h2 id="courseFormTitle">添加课程</h2>
-          <button class="btn btn-ghost btn-sm" type="button" id="courseCancel" hidden>取消编辑</button>
-        </div>
-        <form class="course-form" id="courseForm">
-          <label class="field field-wide"><span>课程名</span>
-            <input class="input" id="cName" maxlength="24" placeholder="例如 数据库原理及实用技术" required />
-          </label>
-          <label class="field"><span>星期</span>
-            <select class="input" id="cDay">
-              <option value="1">周一</option><option value="2">周二</option><option value="3">周三</option>
-              <option value="4">周四</option><option value="5">周五</option><option value="6">周六</option>
-              <option value="7">周日</option>
-            </select>
-          </label>
-          <label class="field"><span>起始节</span>
-            <select class="input" id="cStart">
-              <option value="1">1（08:00）</option><option value="2">2（09:00）</option>
-              <option value="3">3（10:10）</option><option value="4">4（11:10）</option>
-              <option value="5">5（14:00）</option><option value="6">6（15:00）</option>
-              <option value="7">7（16:10）</option><option value="8">8（17:10）</option>
-              <option value="9">9（19:00）</option><option value="10">10（20:00）</option>
-            </select>
-          </label>
-          <label class="field"><span>节数</span>
-            <select class="input" id="cLen">
-              <option value="1">1 节</option><option value="2" selected>2 节</option>
-              <option value="3">3 节</option><option value="4">4 节</option>
-            </select>
-          </label>
-          <label class="field"><span>教室</span>
-            <input class="input" id="cRoom" maxlength="12" placeholder="B楼302" />
-          </label>
-          <label class="field"><span>老师</span>
-            <input class="input" id="cTeacher" maxlength="12" placeholder="可选" />
-          </label>
-          <label class="field field-wide"><span>周次</span>
-            <input class="input" id="cWeeks" value="1-20" placeholder="如 3-19，或 1,3,5" />
-          </label>
-          <div class="form-actions field-wide">
-            <button class="btn" type="submit" id="courseSubmit">加入课表</button>
-            <button class="btn btn-danger" type="button" id="courseDelete" hidden>删除这门课</button>
-          </div>
-        </form>
-        <p class="hint" id="courseHint"></p>
-      </section>
-    </section>
-
-    <!-- ========== 待办 ========== -->
-    <section class="view" id="view-tasks" data-view="tasks" hidden>
-      <header class="view-head"><p class="eyebrow">Deadlines</p><h1>DDL</h1></header>
-      <section class="card">
-        <form class="form-row" id="taskForm">
-          <input class="input" id="taskTitle" placeholder="要做什么，例如：交数据库实验报告" maxlength="60" required />
-          <input class="input input-date" id="taskDue" type="date" required />
-          <button class="btn" type="submit">添加</button>
-        </form>
-        <p class="hint" id="taskHint" role="status"></p>
-      </section>
-      <section class="card">
-        <div class="card-head"><h2>清单</h2><span class="muted" id="taskCount">0 条</span></div>
-        <div class="filter-row" id="taskFilters" role="group" aria-label="筛选待办">
-          <button class="chip-btn is-active" type="button" data-filter="all">全部</button>
-          <button class="chip-btn" type="button" data-filter="today">今天</button>
-          <button class="chip-btn" type="button" data-filter="week">本周</button>
-          <button class="chip-btn" type="button" data-filter="overdue">逾期</button>
-          <button class="chip-btn" type="button" data-filter="done">已完成</button>
-        </div>
-        <ul class="list" id="taskList"><li class="empty">还没有待办</li></ul>
-      </section>
-    </section>
-
-    <!-- ========== 记账 ========== -->
-    <section class="view" id="view-money" data-view="money" hidden>
-      <header class="view-head"><p class="eyebrow">Money</p><h1>记账</h1></header>
-      <section class="card">
-        <div class="card-head">
-          <h2 id="moneyMonth">本月</h2>
-          <label class="budget-edit">月度预算 ¥
-            <input class="inline-input" id="budgetInput" type="number" min="0" step="1" value="1200" />
-          </label>
-        </div>
-        <p class="money" id="moneySpent">¥0.00</p>
-        <div class="progress"><i id="moneyBar" style="width:0"></i></div>
-        <p class="hint" id="moneyHint"></p>
-      </section>
-      <section class="card">
-        <form class="form-row expense-form" id="expenseForm">
-          <input class="input" id="expAmount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="金额" required />
-          <input class="input input-date" id="expDate" type="date" />
-          <select class="input" id="expCat">
-            <option>吃饭</option><option>交通</option><option>日用</option><option>学习</option><option>其他</option>
-          </select>
-          <input class="input" id="expNote" placeholder="备注（可选）" maxlength="30" />
-          <button class="btn" type="submit">记一笔</button>
-        </form>
-        <p class="hint" id="expenseHint" role="status"></p>
-        <div class="card-head"><h2>本月明细</h2><span class="muted" id="expenseCount">0 笔</span></div>
-        <ul class="list" id="expenseList"><li class="empty">本月还没有支出</li></ul>
-      </section>
-    </section>
-
-    <!-- ========== 新功能 1：取件码 ========== -->
-    <section class="view" id="view-parcel" data-view="parcel" hidden>
-      <header class="view-head">
-        <p class="eyebrow">Parcels</p><h1>取件码速记</h1>
-        <p class="muted">例如「1-2-3012 中通」，取完点「已取」会划掉沉底，随时能恢复。</p>
-      </header>
-      <section class="card">
-        <form class="form-row" id="parcelForm">
-          <input class="input" id="parcelCode" placeholder="取件码，如 1-2-3012" maxlength="24" required />
-          <input class="input" id="parcelCarrier" placeholder="快递公司（可选）" maxlength="12" />
-          <button class="btn" type="submit">记下</button>
-        </form>
-        <p class="hint" id="parcelHint" role="status"></p>
-      </section>
-      <section class="card">
-        <div class="card-head"><h2>待取</h2><span class="muted" id="parcelCount">0 件</span></div>
-        <ul class="parcel-list" id="parcelList"></ul>
-      </section>
-      <section class="card">
-        <div class="card-head"><h2>已取</h2><span class="muted">可恢复</span></div>
-        <ul class="parcel-list is-done" id="parcelDoneList"></ul>
-      </section>
-    </section>
-
-    <!-- ========== 新功能 2：今天吃什么 ========== -->
-    <section class="view" id="view-food" data-view="food" hidden>
-      <header class="view-head"><p class="eyebrow">What to eat</p><h1>今天吃什么</h1></header>
-      <section class="card food-stage">
-        <div class="wheel" id="foodWheel" aria-live="polite">
-          <p class="wheel-text" id="foodWheelText">准备好了就转一下</p>
-        </div>
-        <button class="btn btn-lg" type="button" id="foodSpin">开始转</button>
-        <p class="hint" id="foodResult" role="status"></p>
-      </section>
-      <section class="card">
-        <form class="form-row" id="foodForm">
-          <input class="input" id="foodName" placeholder="加一家：食堂档口 / 外卖店" maxlength="20" required />
-          <button class="btn" type="submit">添加</button>
-        </form>
-        <ul class="chip-list" id="foodList"></ul>
-      </section>
-    </section>
-
-    <!-- ========== 新功能 3：宿舍小助手 ========== -->
-    <section class="view" id="view-dorm" data-view="dorm" hidden>
-      <header class="view-head"><p class="eyebrow">Dorm</p><h1>宿舍小助手</h1></header>
-      <section class="card">
-        <div class="card-head"><h2>今日值日</h2><span class="muted" id="dutyDate">—</span></div>
-        <p class="duty-name" id="dutyToday">还没录室友</p>
-        <p class="hint" id="dutyHint">按星期几自动轮值，改名单会即时重排。</p>
-        <div class="duty-schedule" id="dutySchedule"></div>
-      </section>
-      <section class="card">
-        <form class="form-row" id="roommateForm">
-          <input class="input" id="roommateName" placeholder="室友名字" maxlength="12" required />
-          <button class="btn" type="submit">加入</button>
-        </form>
-        <ul class="chip-list" id="roommateList"></ul>
-      </section>
-      <section class="card">
-        <div class="card-head"><h2>AA 算账</h2><span class="muted">人均保留两位</span></div>
-        <form class="form-row" id="aaForm" novalidate>
-          <input class="input" id="aaTotal" type="number" inputmode="decimal" min="0" step="0.01" placeholder="总金额" required />
-          <input class="input" id="aaPeople" type="number" inputmode="numeric" min="1" step="1" placeholder="人数" required />
-          <button class="btn" type="submit">算人均</button>
-        </form>
-        <p class="aa-result" id="aaResult" role="status">填金额和人数，自动算人均</p>
-      </section>
-    </section>
-
-    <!-- ========== 新功能 4：便利贴 ========== -->
-    <section class="view" id="view-notes" data-view="notes" hidden>
-      <header class="view-head">
-        <p class="eyebrow">Notes</p><h1>便利贴墙</h1>
-        <p class="muted">红＝急着还的东西，黄＝日常提醒；点一下就打勾。</p>
-      </header>
-      <section class="card">
-        <form id="noteForm" class="note-form">
-          <textarea class="input" id="noteText" rows="2" maxlength="80" placeholder="例如：周五还张宇的充电宝" required></textarea>
-          <div class="note-options">
-            <label class="radio"><input type="radio" name="noteColor" value="yellow" checked /> 日常</label>
-            <label class="radio"><input type="radio" name="noteColor" value="red" /> 紧急</label>
-            <label class="check"><input type="checkbox" id="notePin" /> 置顶</label>
-            <button class="btn" type="submit">贴上</button>
-          </div>
-        </form>
-        <p class="hint" id="noteHint" role="status"></p>
-      </section>
-      <section class="note-wall" id="noteWall"></section>
-    </section>
-
-    <!-- ========== 新功能 5：心情打卡 ========== -->
-    <section class="view" id="view-mood" data-view="mood" hidden>
-      <header class="view-head"><p class="eyebrow">Mood</p><h1>今天状态怎么样</h1></header>
-      <section class="card">
-        <div class="emoji-row" id="moodPicker" role="radiogroup" aria-label="选择心情">
-          <button class="emoji" type="button" data-emoji="😀" aria-pressed="false">😀</button>
-          <button class="emoji" type="button" data-emoji="🙂" aria-pressed="false">🙂</button>
-          <button class="emoji" type="button" data-emoji="😐" aria-pressed="false">😐</button>
-          <button class="emoji" type="button" data-emoji="😮‍💨" aria-pressed="false">😮‍💨</button>
-          <button class="emoji" type="button" data-emoji="😤" aria-pressed="false">😤</button>
-          <button class="emoji" type="button" data-emoji="🥹" aria-pressed="false">🥹</button>
-        </div>
-        <textarea class="input" id="moodNote" rows="2" maxlength="80" placeholder="一句话：今天为什么是这个状态"></textarea>
-        <button class="btn" type="button" id="moodSave">打卡</button>
-        <p class="hint" id="moodHint" role="status">同一天只保留一条，再存会覆盖。</p>
-      </section>
-      <section class="card">
-        <div class="card-head"><h2>最近</h2><span class="muted">近 14 天</span></div>
-        <ol class="timeline" id="moodTimeline"></ol>
-      </section>
-    </section>
-
-    <!-- ========== 学习 / 专注 / 绩点（下一步填充） ========== -->
-    <section class="view" id="view-study" data-view="study" hidden>
-      <header class="view-head"><p class="eyebrow">Study</p><h1>学习资源</h1></header>
-      <section class="card">
-        <div class="card-head"><h2>免费学习站 + 离线资料</h2><span class="muted">待接入</span></div>
-        <p class="hint">第三步会把按课表匹配的资源、站内阅读和 16 个免费站搬进静态版。</p>
-      </section>
-    </section>
-
-    <section class="view" id="view-focus" data-view="focus" hidden>
-      <header class="view-head"><p class="eyebrow">Focus</p><h1>专注</h1></header>
-      <section class="card">
-        <div class="card-head"><h2>番茄钟</h2><span class="muted">待接入</span></div>
-        <p class="hint">计时、环形进度与今日统计会在后续步骤补上。</p>
-      </section>
-    </section>
-
-    <section class="view" id="view-gpa" data-view="gpa" hidden>
-      <header class="view-head"><p class="eyebrow">GPA</p><h1>绩点</h1></header>
-      <section class="card">
-        <div class="card-head"><h2>学分加权</h2><span class="muted">待接入</span></div>
-        <p class="hint">课程成绩与目标绩点反推会在后续步骤补上。</p>
-      </section>
-    </section>
-
-    <!-- ========== 设置 / 备份 ========== -->
-    <section class="view" id="view-settings" data-view="settings" hidden>
-      <header class="view-head"><p class="eyebrow">Settings</p><h1>设置与备份</h1></header>
-      <section class="card">
-        <div class="card-head"><h2>数据</h2><span class="muted" id="storageInfo">—</span></div>
-        <div class="btn-row">
-          <button class="btn" type="button" id="exportBtn">导出 JSON</button>
-          <label class="btn btn-ghost" for="importInput">导入 JSON</label>
-          <input id="importInput" type="file" accept="application/json,.json" hidden />
-          <button class="btn btn-danger" type="button" id="resetBtn">清空全部</button>
-        </div>
-        <p class="hint" id="backupHint">导出的文件可以换电脑恢复；导入前会校验结构，不合格不会覆盖。</p>
-      </section>
-    </section>
-
-  </main>
-
-  <!-- ---------- 底部悬浮导航 ---------- -->
-  <nav class="tabbar" aria-label="主导航">
-    <a class="tab is-active" href="#/home" data-tab="home" aria-current="page">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-      <span>概览</span>
-    </a>
-    <a class="tab" href="#/schedule" data-tab="schedule">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 3v4M16 3v4M3.5 9.5h17" stroke="currentColor" stroke-width="1.6"/></svg>
-      <span>课表</span>
-    </a>
-    <a class="tab" href="#/tasks" data-tab="tasks">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m8 12 2.5 2.5L16 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      <span>待办</span>
-    </a>
-    <a class="tab" href="#/money" data-tab="money">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 12h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>记账</span>
-    </a>
-    <button class="tab" type="button" id="tabMore" aria-expanded="false" aria-controls="moreSheet">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5.5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor"/></svg>
-      <span>更多</span>
-    </button>
-  </nav>
-
-  <!-- ---------- 「更多」弹层 ---------- -->
-  <div class="sheet" id="moreSheet" hidden>
-    <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="moreTitle">
-      <div class="sheet-grabber" aria-hidden="true"></div>
-      <div class="sheet-head">
-        <h2 id="moreTitle">全部功能</h2>
-        <button class="icon-btn" type="button" id="moreClose" aria-label="关闭">×</button>
-      </div>
-      <div class="more-grid">
-        <a href="#/parcel">📦 取件码</a><a href="#/food">🎲 吃什么</a>
-        <a href="#/dorm">🧹 宿舍小助手</a><a href="#/notes">📝 便利贴</a>
-        <a href="#/mood">🌤 心情打卡</a><a href="#/study">📚 学习资源</a>
-        <a href="#/focus">⏱ 专注</a><a href="#/gpa">📈 绩点</a>
-        <a href="#/settings">⚙️ 设置与备份</a>
-      </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="home">概览</button>
+      <button class="tab-btn" data-tab="schedule">课表</button>
+      <button class="tab-btn" data-tab="tasks">DDL</button>
+      <button class="tab-btn" data-tab="study">学习</button>
+      <button class="tab-btn" data-tab="money">记账</button>
+      <button class="tab-btn" data-tab="focus">专注</button>
+      <button class="tab-btn" data-tab="gpa">绩点</button>
+      <button class="tab-btn" data-tab="fun">趣味</button>
+    </nav>
+    <div class="top-right">
+      <span class="status-pill" id="statusPill"><span class="dot"></span><span id="statusText">连接中</span></span>
+      <button class="share-btn" id="shareBtn" type="button" title="把站点地址分享给同学">分享 / 连网</button>
+      <a class="site-link" href="https://www.wfit.edu.cn/" target="_blank" rel="noopener">WFIT 官网 ↗</a>
     </div>
   </div>
+</header>
 
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-  <noscript><p class="noscript">这个站点需要 JavaScript：请检查浏览器是否禁用了脚本。</p></noscript>
+<main>
+  <div class="banner" id="banner"></div>
 
-  <script src="./js/core/store.js?v=20261122" defer></script>
-  <script src="./js/core/router.js?v=20261122" defer></script>
-  <script src="./js/core/backup.js?v=20261122" defer></script>
-  <script src="./js/modules/parcel.js?v=20261122" defer></script>
-  <script src="./js/modules/food.js?v=20261122" defer></script>
-  <script src="./js/modules/dorm.js?v=20261122" defer></script>
-  <script src="./js/modules/notes.js?v=20261122" defer></script>
-  <script src="./js/modules/mood.js?v=20261122" defer></script>
-  <script src="./js/modules/schedule.js?v=20261122" defer></script>
-  <script src="./js/modules/tasks.js?v=20261122" defer></script>
-  <script src="./js/modules/money.js?v=20261122" defer></script>
-  <script src="./js/app.js?v=20261122" defer></script>
+  <!-- ==================== 概览 ==================== -->
+  <section class="panel active" id="panel-home">
+    <div class="cover" id="cover">
+      <div class="cover-art" aria-hidden="true">
+        <div class="cv-aurora"></div>
+        <div class="cv-grid"></div>
+        <div class="cv-beam"></div>
+        <div class="cv-beam b2"></div>
+        <div class="cv-ring"></div>
+        <div class="cv-scan"></div>
+        <div class="cv-watermark">CAMPUS</div>
+        <div class="cv-noise"></div>
+        <div class="cv-spot" id="cvSpot"></div>
+      </div>
+      <div class="cover-top">
+        <p class="cover-kicker">WEIFANG INSTITUTE OF TECHNOLOGY</p>
+        <div class="cover-clock">
+          <b id="clock">--:--</b>
+          <span>CAMPUS ONLINE</span>
+        </div>
+      </div>
+      <div class="cover-body">
+        <h1 id="coverTitle">校园生活小站</h1>
+        <p class="cover-sub" id="coverSub">正在读取课表…</p>
+        <div class="cover-chips">
+          <span class="chip">今天 <b id="chipToday">—</b></span>
+          <span class="chip">本周 <b id="chipWeek">—</b></span>
+          <span class="chip">待办 <b id="chipDdl">—</b></span>
+          <span class="chip">本月 <b id="chipMoney">—</b></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g4 mt14">
+      <div class="card stat"><span class="stat-k" id="homeNextK">下一节</span><b id="homeNext">—</b><span class="stat-sub" id="homeNextSub"></span></div>
+      <div class="card stat"><span class="stat-k">待办 DDL</span><b id="homeDdl">0</b><span class="stat-sub" id="homeDdlSub"></span></div>
+      <div class="card stat"><span class="stat-k">本月支出</span><b id="homeMoney">¥0</b><span class="stat-sub" id="homeMoneySub"></span></div>
+      <div class="card stat"><span class="stat-k">今日专注</span><b id="homeFocus">0 分钟</b><span class="stat-sub" id="homeFocusSub"></span></div>
+    </div>
+
+    <div class="grid g2 mt14">
+      <div class="card">
+        <div class="card-head"><h2>今天的课</h2><span class="hint" id="homeDate"></span></div>
+        <div class="today-list" id="homeToday"></div>
+        <div class="hint" id="homeFree" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>本周概览</h2><span class="hint" id="homeWeekHint"></span></div>
+        <div class="grid g2" id="homeWeek" style="gap:10px"></div>
+        <div class="hint" id="homeNextWeek" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <div class="grid g2 mt14">
+      <div class="card">
+        <div class="card-head"><h2>校园入口</h2><span class="hint">教务 / 学习通 / 图书馆</span></div>
+        <div class="hub-grid" id="hubGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <h2>官网动态</h2>
+          <div class="seg" id="newsSeg">
+            <button data-news="yaowen" class="active">要闻</button>
+            <button data-news="tongzhi">通知</button>
+          </div>
+        </div>
+        <div id="newsList" class="list"></div>
+        <div class="hint" id="newsFoot" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>校区与联络</h2><span class="hint">来自学校官网</span></div>
+      <div class="grid g2" style="gap:0 28px">
+        <div>
+          <div class="campus-line"><span class="k">主校区</span><span class="v">山东省青州市云门山南路 9888 号 · <a href="tel:05363091199">0536-3091199</a></span></div>
+          <div class="campus-line"><span class="k">中心校区</span><span class="v">山东省潍坊市经济开发区民主街 7777 号 · <a href="tel:05362511866">0536-2511866</a></span></div>
+        </div>
+        <div>
+          <div class="campus-line"><span class="k">招生就业</span><span class="v"><a href="tel:05363091155">0536-3091155</a> / <a href="tel:05363091166">0536-3091166</a></span></div>
+          <div class="campus-line"><span class="k">地图</span><span class="v"><a href="https://www.amap.com/search?query=%E6%BD%8D%E5%9D%8A%E7%90%86%E5%B7%A5%E5%AD%A6%E9%99%A2" target="_blank" rel="noopener">高德</a> · <a href="https://map.baidu.com/search/%E6%BD%8D%E5%9D%8A%E7%90%86%E5%B7%A5%E5%AD%A6%E9%99%A2" target="_blank" rel="noopener">百度</a> · <a href="https://www.wfit.edu.cn/html/cn/jiaotongzhinan/xuexiaoditu/" target="_blank" rel="noopener">校内地图</a></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 课表 ==================== -->
+  <section class="panel" id="panel-schedule">
+    <div class="card">
+      <div class="card-head">
+        <h2 id="wkTitle">第 13 周课表</h2>
+        <div class="wk-nav">
+          <button class="wk-btn" id="wkPrev" aria-label="上一周">‹</button>
+          <span class="wk-title" id="wkLabel">第 13 周</span>
+          <button class="wk-btn" id="wkNext" aria-label="下一周">›</button>
+          <button class="wk-now" id="wkReset">本周</button>
+        </div>
+      </div>
+      <div class="wk-set">
+        <span class="wk-range" id="wkRange"></span>
+        <label class="wk-term">学期第 1 周周一 <input type="date" id="termStart"></label>
+        <button class="btn btn-ghost btn-sm" id="importBtn">导入我的课表 · 74</button>
+        <button class="btn btn-ghost btn-sm" id="icsBtn">导出本周</button>
+        <button class="btn btn-ghost btn-sm" id="printBtn">打印</button>
+        <span class="wk-tip">左右滑动看全周 · 点格子上的 × 删课</span>
+      </div>
+      <div class="tt-wrap"><div class="tt" id="ttGrid"></div></div>
+      <div class="empty" id="scheduleEmpty" hidden></div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>添加课程</h2><span class="hint">只写进当前周；留空周次表示每周</span></div>
+      <div class="form-row">
+        <div class="field grow"><label>课程名</label><input type="text" id="cName" placeholder="如 数据结构" maxlength="30"></div>
+        <div class="field"><label>老师</label><input type="text" id="cTeacher" placeholder="如 侯国家" maxlength="20"></div>
+        <div class="field"><label>教室</label><input type="text" id="cRoom" placeholder="如 B楼107" maxlength="24"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>星期</label><select id="cDay"></select></div>
+        <div class="field"><label>开始节次</label><select id="cStart"></select></div>
+        <div class="field"><label>连上几节</label><select id="cLen"></select></div>
+        <div class="field"><label>周次</label><input type="text" id="cWeeks" placeholder="留空=每周，如 3-16" maxlength="40"></div>
+        <button class="btn btn-primary" id="cAdd">添加</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== DDL ==================== -->
+  <section class="panel" id="panel-tasks">
+    <div class="card">
+      <div class="card-head">
+        <h2>DDL 待办</h2>
+        <div class="seg" id="taskSeg">
+          <button data-filter="all" class="active">全部</button>
+          <button data-filter="today">今天</button>
+          <button data-filter="week">本周</button>
+          <button data-filter="overdue">逾期</button>
+          <button data-filter="done">已完成</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field grow"><label>事情</label><input type="text" id="tTitle" placeholder="如 提交数据库实验报告" maxlength="60"></div>
+        <div class="field"><label>课程</label><input type="text" id="tCourse" placeholder="如 数据库" maxlength="20"></div>
+        <div class="field"><label>截止日期</label><input type="date" id="tDue"></div>
+        <div class="field"><label>优先级</label><select id="tPrio"><option value="normal">普通</option><option value="high">重要</option></select></div>
+        <button class="btn btn-primary" id="tAdd">添加</button>
+      </div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>从学习通导入</h2><span class="hint" id="cxStatus">正在检查连接状态…</span></div>
+
+      <div id="cxPaste">
+        <label class="hint" for="cxText">方式一 · 粘贴列表（推荐，最稳）</label>
+        <textarea id="cxText" placeholder="在学习通「作业 / 考试」列表页全选复制，粘贴到这里。例：
+高等数学 第三章作业
+截止时间：2026-12-01 23:59
+未提交"></textarea>
+        <div class="form-row">
+          <button class="btn btn-primary" id="cxParse">解析文本</button>
+          <button class="btn btn-ghost" id="cxExample">填示例</button>
+          <span class="hint">按「课程 / 标题 / 截止时间」识别，重复的会自动跳过</span>
+        </div>
+      </div>
+
+      <div style="margin:14px 0;height:1px;background:var(--line-soft)"></div>
+
+      <div id="cxSyncBox">
+        <label class="hint">方式二 · Cloudflare 代理代取（需先登录学习通，Cookie 只存本机）</label>
+        <div class="form-row" style="margin-top:6px">
+          <div class="field grow"><label>Cookie</label><input type="text" id="cxCookie" placeholder="从浏览器复制 学习通的 Cookie（不保存密码）" maxlength="4000"></div>
+          <button class="btn btn-ghost" id="cxSaveCookie">保存</button>
+          <button class="btn btn-danger btn-sm" id="cxClearCookie">清除</button>
+        </div>
+        <div class="form-row">
+          <div class="field grow"><label>作业列表页地址</label><input type="url" id="cxUrl" placeholder="https://mooc1.chaoxing.com/... 你打开的那个列表页地址"></div>
+          <button class="btn btn-ghost" id="cxSync">抓取预览</button>
+        </div>
+        <div class="hint" style="margin-top:6px">若页面是动态加载、抓不到内容，直接用上面的粘贴导入。</div>
+      </div>
+
+      <div id="cxPreview" class="mt14"></div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>全部待办</h2><span class="hint" id="taskCount"></span></div>
+      <div class="list" id="taskList"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 记账 ==================== -->
+  <section class="panel" id="panel-money">
+    <div class="card">
+      <div class="card-head"><h2 id="moneyMonth">本月记账</h2><span class="hint">数据只在本机</span></div>
+      <div class="grid g4" style="gap:10px">
+        <div class="mstat"><span>本月支出</span><b id="moneySpent">¥0</b></div>
+        <div class="mstat"><span>预算</span><b id="moneyBudget">¥0</b></div>
+        <div class="mstat"><span>剩余</span><b id="moneyLeft">¥0</b></div>
+        <div class="mstat"><span>日均</span><b id="moneyDaily">¥0</b></div>
+      </div>
+      <div class="bar" style="margin-top:14px"><i id="moneyBar"></i></div>
+      <div class="hint" id="moneyBarHint" style="margin-top:6px"></div>
+      <div class="hint" id="moneyBill" style="margin-top:4px"></div>
+      <div class="form-row">
+        <div class="field"><label>金额</label><input type="number" id="eAmount" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="field"><label>分类</label><select id="eCat">
+          <option>吃饭</option><option>交通</option><option>日用</option><option>学习</option><option>娱乐</option><option>其他</option>
+        </select></div>
+        <div class="field"><label>备注</label><input type="text" id="eNote" placeholder="如 食堂二楼" maxlength="30"></div>
+        <div class="field"><label>日期</label><input type="date" id="eDate"></div>
+        <button class="btn btn-primary" id="eAdd">记一笔</button>
+        <div class="field" style="flex:0 0 auto"><label>预算</label><input type="number" id="budgetInput" min="0" step="10" style="width:110px"></div>
+      </div>
+      <div id="catList" style="margin-top:12px"></div>
+    </div>
+    <div class="card mt14">
+      <div class="card-head"><h2>本月明细</h2><span class="hint" id="expCount"></span></div>
+      <div class="hint" id="expSource" style="margin:0 0 10px"></div>
+      <div class="list" id="expList"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 专注 ==================== -->
+  <section class="panel" id="panel-focus">
+    <div class="card">
+      <div class="card-head"><h2>专注计时</h2><span class="hint" id="focusPhase">准备开始</span></div>
+      <div class="focus-wrap">
+        <div class="ring">
+          <svg viewBox="0 0 210 210" aria-hidden="true">
+            <circle class="ring-bg" cx="105" cy="105" r="82"></circle>
+            <circle class="ring-fg" id="ringFg" cx="105" cy="105" r="82"></circle>
+            <circle class="ring-livedot" cx="105" cy="105" r="4" fill="#2f7d6e" opacity=".9"></circle>
+          </svg>
+          <div class="ring-label"><b id="focusTime">25:00</b><span id="focusLabel">专注</span></div>
+        </div>
+        <div class="seg" id="focusModes">
+          <button data-min="25" class="active">25 分钟</button>
+          <button data-min="45">45 分钟</button>
+          <button data-min="60">60 分钟</button>
+        </div>
+        <div class="form-row" style="justify-content:center;margin-top:0">
+          <button class="btn btn-primary" id="focusStart">开始</button>
+          <button class="btn btn-ghost" id="focusReset">重置</button>
+        </div>
+      </div>
+      <div class="grid g3 mt14">
+        <div class="card stat" style="box-shadow:none;border-style:dashed"><span class="stat-k">今日番茄</span><b id="focusSessions">0</b></div>
+        <div class="card stat" style="box-shadow:none;border-style:dashed"><span class="stat-k">今日专注</span><b id="focusToday">0 分钟</b></div>
+        <div class="card stat" style="box-shadow:none;border-style:dashed"><span class="stat-k">累计专注</span><b id="focusTotal">0 小时</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 绩点 ==================== -->
+  <section class="panel" id="panel-gpa">
+    <div class="card">
+      <div class="card-head"><h2>成绩与绩点</h2><span class="hint">按学分加权</span></div>
+      <div class="gpa-head"><span>课程</span><span>学分</span><span>成绩</span><span></span></div>
+      <div id="gpaRows"></div>
+      <div class="form-row">
+        <div class="field grow"><label>课程</label><input type="text" id="gName" placeholder="如 数据结构" maxlength="30"></div>
+        <div class="field"><label>学分</label><input type="number" id="gCredit" min="0.5" step="0.5" placeholder="4"></div>
+        <div class="field"><label>成绩</label><input type="number" id="gScore" min="0" max="100" step="1" placeholder="88"></div>
+        <button class="btn btn-primary" id="gAdd">加入</button>
+      </div>
+      <div class="gpa-out">
+        <div><span>加权平均分</span><b id="gpaAvg">—</b></div>
+        <div><span>加权绩点</span><b id="gpaPoint">—</b></div>
+        <div><span>已修学分</span><b id="gpaCredits">0</b></div>
+      </div>
+      <div class="form-row" style="margin-top:16px">
+        <div class="field"><label>目标绩点</label><input type="number" id="gpaTarget" min="0" max="5" step="0.1" placeholder="3.6"></div>
+        <div class="field"><label>毕业总学分</label><input type="number" id="gpaGoalCredit" min="1" step="1" placeholder="160"></div>
+      </div>
+      <div class="hint" id="gpaGoalOut" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+  <!-- ==================== 学习 ==================== -->
+  <section class="panel" id="panel-study">
+    <div class="study-hero">
+      <div class="study-hero-main">
+        <p class="study-kicker">STUDY HUB</p>
+        <h1 id="studyTitle">跟着课表学</h1>
+        <p class="hint" id="studyIntro"></p>
+      </div>
+      <div class="study-stats" id="studyStats"></div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>本周课程 · 免费资源</h2><span class="hint">按课表自动匹配，点开即用</span></div>
+      <div id="studyCourses" class="study-course-grid"></div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>免费学习站</h2><span class="hint">全部免费，无需注册也能看</span></div>
+      <div id="studySites" class="study-site-grid"></div>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>微信小程序 · 赛博鸡蛋篮</h2><span class="hint">免费 AI token 信息聚合</span></div>
+      <div class="mini-row">
+        <div class="mini-qr" id="miniQr"><span class="hint">小程序码</span></div>
+        <div class="mini-main">
+          <p class="hint" style="margin:0 0 8px">浏览器不能直接运行微信小程序（这是微信的限制，任何网页都做不到）。想在网页里“点开就用”，只有两条路：</p>
+          <ol class="mini-steps">
+            <li>手机微信扫左边的小程序码，或微信里搜「赛博鸡蛋篮」，一步直达。</li>
+            <li>把下面的小程序路径复制到微信任意聊天里发送，点开即可进入。</li>
+          </ol>
+          <div class="share-actions">
+            <button class="btn" type="button" id="copyMini">复制小程序路径</button>
+            <button class="btn" type="button" id="miniUploadBtn">上传小程序码</button>
+          </div>
+          <p class="hint" id="miniHint" style="margin:8px 0 0">小程序码图片只存在这台电脑，不会上传。</p>
+        </div>
+      </div>
+      <input type="file" id="miniFile" accept="image/*" hidden>
+    </div>
+
+    <div class="card mt14">
+      <div class="card-head"><h2>本地资料库</h2><span class="hint" id="libCount">加载中…</span></div>
+      <div id="studyLibrary" class="lib-grid"></div>
+      <p class="hint" id="libHint" style="margin-top:10px"></p>
+    </div>
+
+    <div class="card mt14" id="shareCard">
+      <div class="card-head"><h2>把这站分享给同学</h2><span class="hint">有网就能打开 · 各自数据独立</span></div>
+      <div class="share-row">
+        <div class="share-qr" id="shareQr"></div>
+        <div class="share-main">
+          <div class="share-url" id="shareUrl">正在读取本机地址…</div>
+          <p class="hint" id="shareHint"></p>
+          <div class="share-actions">
+            <button class="btn" id="copyShare" type="button">复制链接</button>
+            <a class="btn" id="openShare" target="_blank" rel="noopener">打开</a>
+            <button class="btn" id="copyGuest" type="button">复制分享链接</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 趣味 ==================== -->
+  <section class="panel" id="panel-fun">
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-head"><h2>今天吃什么</h2><span class="hint">选择困难症急救</span></div>
+        <div class="food-box" id="foodBox">点一下开始抽</div>
+        <div class="form-row">
+          <button class="btn btn-primary" id="foodPick">抽一个</button>
+          <button class="btn btn-ghost btn-sm" id="foodAdd">加选项</button>
+          <button class="btn btn-ghost btn-sm" id="foodReset">恢复默认</button>
+        </div>
+        <div class="hint food-meta" id="foodMeta">西校区 / 中心校区周边</div>
+        <div class="food-pool" id="foodPool"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>今日签</h2><span class="hint" id="fortuneDate"></span></div>
+        <div id="fortuneBox"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="foot">
+  <div class="foot-row">
+    <span>本地运行 · 数据存在你的电脑里</span>
+    <span id="footCounts"></span>
+    <span id="footVersion"></span>
+    <button class="icon-btn" id="backupBtn" style="font-size:11.5px">导出备份</button>
+    <button class="icon-btn" id="restoreBtn" style="font-size:11.5px">导入备份</button>
+    <button class="icon-btn" id="clearBtn" style="font-size:11.5px">清空数据</button>
+    <a href="https://www.wfit.edu.cn/" target="_blank" rel="noopener" style="border:0">潍坊理工学院官网</a>
+  </div>
+</div>
+
+<nav class="mnav" id="mnav">
+  <button data-tab="home" class="active"><span class="ico">⌂</span>概览</button>
+  <button data-tab="schedule"><span class="ico">▦</span>课表</button>
+  <button data-tab="tasks"><span class="ico">✓</span>DDL</button>
+  <button data-tab="study"><span class="ico">▤</span>学习</button>
+  <button data-tab="money"><span class="ico">¥</span>记账</button>
+  <button data-tab="focus"><span class="ico">◷</span>专注</button>
+  <button data-tab="gpa"><span class="ico">◪</span>绩点</button>
+  <button data-tab="fun"><span class="ico">✦</span>趣味</button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="restoreFile" accept="application/json" hidden>
+
+<div class="reader" id="readerModal" aria-hidden="true">
+  <div class="reader-bar">
+    <b id="readerTitle">资料</b>
+    <div class="reader-actions">
+      <a class="btn" id="readerDownload" download>下载到本地</a>
+      <button class="icon-btn" id="readerClose" type="button">关闭</button>
+    </div>
+  </div>
+  <iframe id="readerFrame" title="资料阅读器"></iframe>
+</div>
+
+<script src="./assets/vendor/qrcode.min.js?v=20261122"></script>
+<script>window.CAMPUS_WORKER_URL = "https://campus-chaoxing-proxy.184379886.workers.dev"; // 部署 Cloudflare Worker 后，把这里替换成 https://xxx.workers.dev
+window.CAMPUS_PROXY_TOKEN = "";  // 如果 Worker 设置了 PROXY_TOKEN，这里填同一个口令</script>
+<script src="./js/static-adapter.js?v=20261122"></script>
+<script src="./app.js?v=20261122"></script>
 </body>
 </html>

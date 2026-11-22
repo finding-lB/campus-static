@@ -1,0 +1,18 @@
+[
+  {
+    "file": "hello-algo-zh-python.pdf",
+    "title": "Hello 算法（Python 版）",
+    "subjects": ["数据结构", "Python程序设计", "机器学习与应用"],
+    "desc": "开源免费算法教程，动画图解 + 可运行代码，和数据结构课同步看最省力。",
+    "license": "CC BY-NC-SA 4.0",
+    "source": "https://www.hello-algo.com/"
+  },
+  {
+    "file": "progit-zh.pdf",
+    "title": "Pro Git 中文版（第 2 版）",
+    "subjects": ["Web前端开发技术", "Java程序设计", "开发工具"],
+    "desc": "版本控制从入门到分支、协作、服务器搭齐全套，课程实验交代码前值得翻一遍。",
+    "license": "CC BY-NC-SA 3.0",
+    "source": "https://git-scm.com/book/zh/v2"
+  }
+]

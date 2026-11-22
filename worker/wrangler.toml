@@ -1,0 +1,13 @@
+name = "campus-chaoxing-proxy"
+main = "index.js"
+compatibility_date = "2026-11-01"
+
+# 可选：限制允许调用代理的站点（生产建议改成你的 Pages 域名）
+[vars]
+ALLOW_ORIGIN = "*"
+# PROXY_TOKEN = "换成一串随机口令"   # 如果设置，前端也要填同样的口令
+
+# 可选：自定义域名
+# routes = [
+#   { pattern = "proxy.example.com", custom_domain = true }
+# ]
