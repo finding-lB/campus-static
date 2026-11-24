@@ -229,6 +229,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--pri); box-shadow
 .wk-range { font-size: 12.5px; color: var(--txt-2); font-variant-numeric: tabular-nums; }
 .wk-term { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); margin-left: auto; }
 .wk-term input { width: 138px; padding: 5px 8px; font-size: 12px; }
+.wk-manual {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: -2px 0 12px; padding: 9px 11px; border: 1px dashed var(--line);
+  border-radius: 12px; background: var(--panel-2);
+}
+.wk-manual label { font-size: 11.5px; color: var(--muted); }
+.wk-manual input { width: 66px; padding: 5px 8px; font-size: 12px; }
+.wk-mode { margin-left: auto; font-size: 11px; color: var(--muted); }
+.wk-mode.manual { color: var(--pri); font-weight: 600; }
 .wk-tip { font-size: 10.5px; color: var(--muted); display: none; }
 
 .tt-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
@@ -392,6 +401,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--pri); box-shadow
   box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.alert {
+  background: #8f1d16; color: #fff; border: 1px solid rgba(255, 255, 255, .28);
+  box-shadow: 0 0 0 4px rgba(222, 69, 55, .16), 0 16px 34px rgba(125, 25, 20, .35);
+  font-weight: 700; letter-spacing: .2px;
+}
+.ddl-remind { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 12px; padding-top: 11px; border-top: 1px dashed var(--line); }
+.ddl-remind .hint { flex: 1 1 240px; min-width: 0; }
 .banner {
   display: none; margin-bottom: 12px; padding: 9px 13px; border-radius: 12px; font-size: 12.5px;
   background: #fff4e3; color: #9a6510; border: 1px solid #f2ddb6;
@@ -469,6 +485,7 @@ body.guest .status-pill { background: #fff4e9; color: #b65a17; }
   transition: transform .18s ease, box-shadow .18s ease;
 }
 .course-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.course-card.today-card { border-color: rgba(255, 138, 61, .45); box-shadow: 0 0 0 1px rgba(255, 138, 61, .08) inset; }
 .course-card h3 { margin: 0 0 4px; font-size: 15.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .course-meta { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
 .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--txt-2); background: #fff; }
@@ -568,7 +585,7 @@ body.guest .status-pill { background: #fff4e9; color: #b65a17; }
 
 /* ---------- 打印：只留当前周课表 ---------- */
 @media print {
-  .topbar, .mnav, .hero-actions, .wk-nav, .wk-set, .muted-print, .foot, #toast, .btn { display: none !important; }
+  .topbar, .mnav, .hero-actions, .wk-nav, .wk-set, .wk-manual, .muted-print, .foot, #toast, .btn { display: none !important; }
   body { background: #fff; padding: 0; }
   main { max-width: none; padding: 0; }
   .card { box-shadow: none; border: 0; padding: 0; }

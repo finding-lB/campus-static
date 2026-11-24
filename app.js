@@ -146,12 +146,14 @@ const debounce = (fn, ms) => {
   return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
 };
 let toastTimer = null;
-function toast(msg) {
+function toast(msg, kind) {
   const box = el('toast');
+  if (!box) return;
   box.textContent = msg;
+  box.classList.toggle('alert', kind === 'alert');
   box.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => box.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => box.classList.remove('show', 'alert'), kind === 'alert' ? 5200 : 2400);
 }
 
 /* ==================== 日期与周次 ==================== */
@@ -159,19 +161,49 @@ function termStart() {
   const d = parseYmd(state.kv.termStart);
   return d || parseYmd(DEFAULT_KV.termStart);
 }
+/** 只按日期算的自动周次，不做任何手动覆盖。 */
 function weekOf(date) {
   return Math.floor((dayNum(date) - dayNum(termStart())) / 7) + 1;
 }
-function currentWeek() {
+function autoWeek() {
   return Math.max(1, Math.min(30, weekOf(new Date())));
 }
-function displayWeek() {
+/** 手动设定的周次：存在 state.kv.week 里，0 表示跟随日期自动算。 */
+function manualWeek() {
   const w = Number(state.kv.week);
-  if (w >= 1 && w <= 30) return Math.round(w);
+  return Number.isFinite(w) && w >= 1 && w <= 30 ? Math.round(w) : 0;
+}
+/** 全站统一的“当前周”：手动优先，否则按开学日期自动算。 */
+function currentWeek() {
+  return manualWeek() || autoWeek();
+}
+/** 兼容旧调用名，方便以后查这个函数。 */
+function getCurrentWeek() {
+  return currentWeek();
+}
+/** 手动设周时，用“今天所在的周”反推一个日期锚点，保证课表日期不跑偏。 */
+function effectiveTermStart() {
+  const m = manualWeek();
+  if (!m) return termStart();
+  const today = new Date();
+  const thisMonday = addDays(today, -((today.getDay() + 6) % 7));
+  return addDays(thisMonday, -(m - 1) * 7);
+}
+/** 某个日期落在“当前生效周”体系下的第几周（跨周时自动 +1）。 */
+function weekForDate(date) {
+  const m = manualWeek();
+  if (!m) return weekOf(date);
+  const today = new Date();
+  const thisMonday = addDays(today, -((today.getDay() + 6) % 7));
+  const dateMonday = addDays(date, -((date.getDay() + 6) % 7));
+  const delta = Math.round((dayNum(dateMonday) - dayNum(thisMonday)) / 7);
+  return Math.max(1, Math.min(30, m + delta));
+}
+function displayWeek() {
   return currentWeek();
 }
 function weekMonday(w) {
-  return addDays(termStart(), (w - 1) * 7);
+  return addDays(effectiveTermStart(), (w - 1) * 7);
 }
 function weekRangeText(w) {
   const a = weekMonday(w), b = addDays(a, 6);
@@ -338,19 +370,20 @@ function tickClock() {
 
 function renderCover() {
   const w = currentWeek();
+  const manual = !!manualWeek();
   const today = todayCourses();
   const open = state.tasks.filter((t) => !t.done).length;
   const spent = monthSpent();
-  el('coverSub').textContent = `第 ${w} 周 · ${DAY_NAMES[(new Date().getDay() + 6) % 7]} · 今天 ${today.length} 节课`;
+  el('coverSub').textContent = `第 ${w} 周${manual ? '（手动）' : ''} · ${DAY_NAMES[(new Date().getDay() + 6) % 7]} · 今天 ${today.length} 节课`;
   el('chipToday').textContent = today.length + ' 节';
-  el('chipWeek').textContent = `第 ${w} 周`;
+  el('chipWeek').textContent = `第 ${w} 周${manual ? ' · 手动' : ''}`;
   el('chipDdl').textContent = open + ' 条';
   el('chipMoney').textContent = money(spent);
 }
 
 /* ==================== 渲染：概览 ==================== */
 function todayCourses(date = new Date()) {
-  const w = weekOf(date);
+  const w = weekForDate(date);
   const day = ((date.getDay() + 6) % 7) + 1;
   return state.courses
     .filter((c) => c.day === day && inWeek(c, w))
@@ -438,7 +471,7 @@ function renderHome() {
   el('homeFocus').textContent = dayMin + ' 分钟';
   el('homeFocusSub').textContent = `${f.day === ymd(new Date()) ? f.sessions : 0} 个番茄`;
 
-  el('homeDate').textContent = `${pad(new Date().getMonth() + 1)}/${pad(new Date().getDate())} · 第 ${currentWeek()} 周`;
+  el('homeDate').textContent = `${pad(new Date().getMonth() + 1)}/${pad(new Date().getDate())} · 第 ${currentWeek()} 周${manualWeek() ? '（手动）' : ''}`;
 
   const box = el('homeToday');
   const list = todayCourses();
@@ -469,7 +502,7 @@ function renderHome() {
     <div class="stat"><span class="stat-k">本周时段</span><b>${wk.length}</b><span class="stat-sub">跨 ${new Set(wk.map((c) => c.name)).size} 门课</span></div>
     <div class="stat"><span class="stat-k">最忙的一天</span><b>${perDay[busiest] ? DAY_NAMES[busiest] : '—'}</b><span class="stat-sub">${perDay[busiest]} 节</span></div>
     <div class="stat"><span class="stat-k">本周总课时</span><b>${perDay.reduce((a, b) => a + b, 0)}</b><span class="stat-sub">节 · 每节 50 分钟</span></div>
-    <div class="stat"><span class="stat-k">本周 DDL</span><b>${state.tasks.filter((t) => !t.done && weekOf(parseYmd(t.due) || new Date()) === w).length}</b><span class="stat-sub">条待办</span></div>`;
+    <div class="stat"><span class="stat-k">本周 DDL</span><b>${state.tasks.filter((t) => !t.done && weekForDate(parseYmd(t.due) || new Date()) === w).length}</b><span class="stat-sub">条待办</span></div>`;
 
   const nw = state.courses.filter((c) => inWeek(c, w + 1)).length;
   el('homeNextWeek').textContent = `第 ${w + 1} 周（${weekRangeText(w + 1)}）有 ${nw} 个时段`;
@@ -494,6 +527,12 @@ function renderSchedule() {
   el('wkLabel').textContent = `第 ${w} 周`;
   el('wkRange').textContent = `${weekRangeText(w)} · ${wk.length} 个时段`;
   el('termStart').value = state.kv.termStart;
+  const m = manualWeek();
+  if (el('weekManual')) el('weekManual').value = m || '';
+  if (el('weekModeHint')) {
+    el('weekModeHint').textContent = m ? `当前：手动第 ${m} 周` : `当前：自动第 ${currentWeek()} 周`;
+    el('weekModeHint').classList.toggle('manual', !!m);
+  }
 
   const grid = el('ttGrid');
   const curW = currentWeek();
@@ -547,7 +586,7 @@ function filteredTasks() {
   else {
     list = list.filter((t) => !t.done);
     if (taskFilter === 'today') list = list.filter((t) => t.due === today);
-    if (taskFilter === 'week') list = list.filter((t) => weekOf(parseYmd(t.due) || new Date()) === w && t.due >= today);
+    if (taskFilter === 'week') list = list.filter((t) => weekForDate(parseYmd(t.due) || new Date()) === w && t.due >= today);
     if (taskFilter === 'overdue') list = list.filter((t) => t.due < today);
   }
   return list.sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || a.title.localeCompare(b.title));
@@ -571,6 +610,122 @@ function renderTasks() {
       ${taskBadge(t)}
       <button class="icon-btn" data-deltask="${t.id}" title="删除">删除</button>
     </div>`).join('');
+}
+
+/* ---------- DDL 分级提醒（72h / 24h / 3h） ---------- */
+const DDL_REMIND_LEVELS = [
+  { key: 'reminded_72h', hours: 72 },
+  { key: 'reminded_24h', hours: 24 },
+  { key: 'reminded_3h', hours: 3 },
+];
+let ddlReminderTimer = null;
+
+/** 只有日期的 DDL 默认当天 23:59 截止；已带 HH:mm 的也能识别。 */
+function dueTimestamp(task) {
+  const raw = String(task && task.due || '').trim();
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?$/.exec(raw);
+  if (!m) return NaN;
+  const y = +m[1], mo = +m[2] - 1, d = +m[3];
+  const hh = m[4] === undefined ? 23 : Math.min(23, Math.max(0, +m[4]));
+  const mm = m[5] === undefined ? 59 : Math.min(59, Math.max(0, +m[5]));
+  return new Date(y, mo, d, hh, mm, m[4] === undefined ? 59 : 0, 0).getTime();
+}
+
+function notificationSupported() {
+  return typeof window !== 'undefined' && 'Notification' in window;
+}
+
+function refreshNotifyUi() {
+  const btn = el('notifyBtn');
+  const hint = el('notifyHint');
+  if (!btn || !hint) return;
+  const keepHint = '为了确保不漏掉 DDL，请保持网页在后台打开，或将其添加到手机桌面。（只有日期时按当天 23:59 计算）';
+  if (!notificationSupported()) {
+    btn.disabled = true;
+    btn.textContent = '当前浏览器不支持系统通知';
+    hint.textContent = `${keepHint}（页面内红色提醒仍会正常工作）`;
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    btn.disabled = true;
+    btn.textContent = '系统通知已开启';
+    hint.textContent = `系统通知已开启。${keepHint}`;
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    btn.disabled = true;
+    btn.textContent = '系统通知已被拒绝';
+    hint.textContent = `系统通知被浏览器拒绝，可在地址栏的网站权限里重新允许。${keepHint}`;
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = '开启系统通知';
+  hint.textContent = `点「开启系统通知」授权后，网页切到后台也能收到提醒。${keepHint}`;
+}
+
+function requestNotifyPermission() {
+  if (!notificationSupported()) return;
+  let handled = false;
+  const done = (permission) => {
+    if (handled) return;
+    handled = true;
+    refreshNotifyUi();
+    toast(permission === 'granted' ? '系统通知已开启' : '没有拿到系统通知权限，页面内提醒仍会正常显示');
+  };
+  try {
+    const ret = Notification.requestPermission(done);
+    if (ret && typeof ret.then === 'function') ret.then(done).catch(() => refreshNotifyUi());
+  } catch {
+    refreshNotifyUi();
+  }
+}
+
+function sendSystemNotification(task, level, message) {
+  if (!notificationSupported() || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(`DDL 提醒 · 还剩 ${level.hours} 小时`, {
+      body: message.replace(/^⚠️ 紧急：/, ''),
+      tag: `ddl-${task.id}-${level.key}`,
+      renotify: true,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch {
+    /* 部分手机浏览器不支持构造 Notification，页面内 Toast 仍然有效 */
+  }
+}
+
+function checkDdlReminders() {
+  const now = Date.now();
+  const alerts = [];
+  let changed = false;
+  for (const t of state.tasks) {
+    if (!t || t.done || !t.due) continue;
+    const due = dueTimestamp(t);
+    if (!Number.isFinite(due)) continue;
+    const hours = (due - now) / 3600000;
+    if (hours < 0) continue;
+    const applicable = DDL_REMIND_LEVELS.filter((l) => hours <= l.hours);
+    const pending = applicable.filter((l) => !t[l.key]);
+    if (!pending.length) continue;
+    // 打开页面时如果已经进入更晚的节点，只提醒最紧急的一档，并把已经错过的档位标记掉，避免连环弹窗
+    applicable.forEach((l) => { t[l.key] = true; });
+    changed = true;
+    const level = pending[pending.length - 1];
+    const message = `⚠️ 紧急：『${t.title}』还剩不到 ${level.hours} 小时截止！${t.course ? `（${t.course}）` : ''}`;
+    alerts.push(message);
+    sendSystemNotification(t, level, message);
+  }
+  if (changed) persist();
+  if (!alerts.length) return;
+  if (alerts.length === 1) toast(alerts[0], 'alert');
+  else toast(`${alerts[0]} 另外还有 ${alerts.length - 1} 条 DDL 进入提醒`, 'alert');
+}
+
+function initDdlReminders() {
+  refreshNotifyUi();
+  checkDdlReminders();
+  if (ddlReminderTimer) clearInterval(ddlReminderTimer);
+  ddlReminderTimer = setInterval(checkDdlReminders, 60 * 1000);
 }
 
 /* ==================== 渲染：记账 ==================== */
@@ -877,7 +1032,7 @@ function renderMini() {
 
 /** 某门课在一次具体排课里对应的真实日期（termStart + 第几周 + 星期几） */
 function dateOfSession(c, week) {
-  const start = parseYmd(state.kv.termStart) || parseYmd(DEFAULT_KV.termStart) || new Date();
+  const start = effectiveTermStart();
   return addDays(start, (week - 1) * 7 + (c.day - 1));
 }
 
@@ -899,15 +1054,26 @@ function courseSessions(name, w) {
 function renderStudy() {
   if (!el('studyCourses')) return;
   const w = currentWeek();
+  const manual = !!manualWeek();
   const wk = state.courses.filter((c) => inWeek(c, w));
-  const names = [...new Set(wk.map((c) => c.name))];
+  const todayIdx = (new Date().getDay() + 6) % 7 + 1;
+  const todayList = wk
+    .filter((c) => c.day === todayIdx)
+    .sort((a, b) => a.start - b.start);
+  const todayNames = [...new Set(todayList.map((c) => c.name))];
+  const otherNames = [...new Set(wk.map((c) => c.name))].filter((n) => !todayNames.includes(n));
+  // 今天有课就先列今天，再把本周其余课程排在后面
+  const names = [...todayNames, ...otherNames];
 
-  el('studyIntro').textContent = names.length
-    ? `第 ${w} 周有 ${names.length} 门课、${wk.length} 个时段。下面按课名配了免费资源，今天 / 明天要上的课会单独标出来。`
-    : `第 ${w} 周没有排课（空周），可以从下面的免费站点自己找方向。`;
+  const intro = names.length
+    ? `第 ${w} 周${manual ? '（手动）' : ''}有 ${names.length} 门课、${wk.length} 个时段。今天（${DAY_NAMES[todayIdx - 1]}）${todayList.length
+      ? `有 ${todayList.length} 个时段：${todayNames.join('、')}，已按课名匹配下面的免费资源。`
+      : '没有排课，可以先看下面的免费站或自习。'}`
+    : `第 ${w} 周${manual ? '（手动）' : ''}没有排课（空周），可以从下面的免费站点自己找方向。`;
+  el('studyIntro').textContent = intro;
   el('studyStats').innerHTML = `
     <div class="sstat"><b>${names.length}</b><span>门本周课程</span></div>
-    <div class="sstat"><b>${wk.length}</b><span>个本周时段</span></div>
+    <div class="sstat"><b>${todayList.length}</b><span>个今天时段</span></div>
     <div class="sstat"><b>${studyLib && !studyLib.error ? studyLib.total : '—'}</b><span>份离线资料</span></div>`;
 
   el('studyCourses').innerHTML = names.map((name) => {
@@ -929,7 +1095,7 @@ function renderStudy() {
     const links = linksForCourse(name).map((l) => (l.read
       ? `<button class="res-link local" type="button" data-read="${esc(l.read)}" data-title="${esc(name)} · 本地资料">📄 <span>${esc(l.t)}</span></button>`
       : `<a class="res-link" href="${esc(l.u)}" target="_blank" rel="noopener">↗ <span>${esc(l.t)}</span></a>`)).join('');
-    return `<div class="course-card">
+    return `<div class="course-card${isToday ? ' today-card' : ''}">
       <h3>${esc(name)}${pills}</h3>
       <p class="course-meta">${esc(meta)}</p>
       <div class="res-row">${links}</div>
@@ -1348,7 +1514,28 @@ function bindSchedule() {
 
   el('wkPrev').addEventListener('click', () => { state.kv.week = Math.max(1, displayWeek() - 1); persist(); renderAll(); });
   el('wkNext').addEventListener('click', () => { state.kv.week = Math.min(30, displayWeek() + 1); persist(); renderAll(); });
-  el('wkReset').addEventListener('click', () => { state.kv.week = 0; persist(); renderAll(); toast('已回到第 ' + currentWeek() + ' 周'); });
+  el('wkReset').addEventListener('click', () => {
+    state.kv.week = 0;
+    persist(); renderAll();
+    toast('已恢复自动计算：第 ' + currentWeek() + ' 周');
+  });
+  const applyManualWeek = () => {
+    const raw = el('weekManual')?.value.trim();
+    const w = Number(raw);
+    if (!raw || !Number.isFinite(w) || w < 1 || w > 30) return toast('请输入 1–30 之间的周次');
+    state.kv.week = Math.round(w);
+    persist(); renderAll();
+    toast('已锁定第 ' + state.kv.week + ' 周，首页和学习页同步更新');
+  };
+  el('weekApply')?.addEventListener('click', applyManualWeek);
+  el('weekManual')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); applyManualWeek(); }
+  });
+  el('weekAuto')?.addEventListener('click', () => {
+    state.kv.week = 0;
+    persist(); renderAll();
+    toast('已恢复自动计算：第 ' + currentWeek() + ' 周');
+  });
   el('termStart').addEventListener('change', (e) => {
     const v = e.target.value;
     if (!parseYmd(v)) return toast('日期不合法');
@@ -1374,6 +1561,8 @@ function bindSchedule() {
 }
 
 function bindTasks() {
+  el('notifyBtn')?.addEventListener('click', requestNotifyPermission);
+  refreshNotifyUi();
   el('taskSeg').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-filter]');
     if (!btn) return;
@@ -1733,6 +1922,7 @@ async function boot() {
   loadLibrary();
   tickClock();
   setInterval(tickClock, 1000);
+  initDdlReminders();
   // 每分钟刷新「下一节 / 当前课」的高亮，不重建整块 DOM
   setInterval(() => { renderHome(); renderSchedule(); }, 60000);
 }
