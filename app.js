@@ -111,6 +111,7 @@ const HUBS = [
 const DEFAULT_KV = {
   termStart: '2026-08-24',
   week: 0,
+  weekView: 0,
   budget: 1200,
   focus: { total: 0, signals: 0, day: '', dayMin: 0, sessions: 0 },
   gpaGoal: { target: 3.6, credits: 160 },
@@ -200,6 +201,8 @@ function weekForDate(date) {
   return Math.max(1, Math.min(30, m + delta));
 }
 function displayWeek() {
+  const v = Number(state.kv.weekView);
+  if (Number.isFinite(v) && v >= 1 && v <= 30) return Math.round(v);
   return currentWeek();
 }
 function weekMonday(w) {
@@ -308,6 +311,7 @@ function normalizeKv(raw) {
     if (v !== null && v !== undefined) kv[k] = v;
   }
   kv.week = Number.isFinite(+kv.week) ? Math.max(0, Math.min(30, Math.round(+kv.week))) : 0;
+  kv.weekView = Number.isFinite(+kv.weekView) ? Math.max(0, Math.min(30, Math.round(+kv.weekView))) : 0;
   kv.budget = Math.max(0, Number(kv.budget) || 0);
   kv.termStart = parseYmd(kv.termStart) ? kv.termStart : DEFAULT_KV.termStart;
   kv.focus = { ...DEFAULT_KV.focus, ...(typeof kv.focus === 'object' && kv.focus ? kv.focus : {}) };
@@ -1512,18 +1516,19 @@ function bindSchedule() {
   el('cLen').innerHTML = [1, 2, 3, 4].map((n) => `<option value="${n}" ${n === 2 ? 'selected' : ''}>${n} 节</option>`).join('');
   el('cDay').value = '1'; el('cStart').value = '1';
 
-  el('wkPrev').addEventListener('click', () => { state.kv.week = Math.max(1, displayWeek() - 1); persist(); renderAll(); });
-  el('wkNext').addEventListener('click', () => { state.kv.week = Math.min(30, displayWeek() + 1); persist(); renderAll(); });
+  el('wkPrev').addEventListener('click', () => { state.kv.weekView = Math.max(1, displayWeek() - 1); persist(); renderAll(); });
+  el('wkNext').addEventListener('click', () => { state.kv.weekView = Math.min(30, displayWeek() + 1); persist(); renderAll(); });
   el('wkReset').addEventListener('click', () => {
-    state.kv.week = 0;
+    state.kv.weekView = 0;
     persist(); renderAll();
-    toast('已恢复自动计算：第 ' + currentWeek() + ' 周');
+    toast('已回到当前第 ' + currentWeek() + ' 周');
   });
   const applyManualWeek = () => {
     const raw = el('weekManual')?.value.trim();
     const w = Number(raw);
     if (!raw || !Number.isFinite(w) || w < 1 || w > 30) return toast('请输入 1–30 之间的周次');
     state.kv.week = Math.round(w);
+    state.kv.weekView = 0;
     persist(); renderAll();
     toast('已锁定第 ' + state.kv.week + ' 周，首页和学习页同步更新');
   };
@@ -1533,6 +1538,7 @@ function bindSchedule() {
   });
   el('weekAuto')?.addEventListener('click', () => {
     state.kv.week = 0;
+    state.kv.weekView = 0;
     persist(); renderAll();
     toast('已恢复自动计算：第 ' + currentWeek() + ' 周');
   });
